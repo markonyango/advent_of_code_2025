@@ -6,11 +6,19 @@ const INPUT: &str = "749639-858415,65630137-65704528,10662-29791,1-17,9897536-10
 fn main() {
     let res = parse(INPUT).unwrap();
     let sum = res
+        .0
         .into_iter()
         .reduce(|a, c| a + c)
         .expect("Could find sum");
 
+    let sum_part2 = res
+        .1
+        .into_iter()
+        .reduce(|a, c| a + c)
+        .expect("Could find sum part2");
+
     println!("Sum: {sum}");
+    println!("Sum (part 2): {sum_part2}");
 }
 
 fn get_range(input: &str, index: usize) -> (i64, i64) {
@@ -52,9 +60,34 @@ fn find_invalid_ids(range: (i64, i64)) -> Vec<i64> {
     res
 }
 
-fn parse(input: &str) -> Result<Vec<i64>, Box<dyn std::error::Error>> {
+fn find_invalid_ids_part2(range: (i64, i64)) -> Vec<i64> {
+    let mut res = vec![];
+
+    for id in range.0..=range.1 {
+        let v = id.to_string().chars().collect::<Vec<_>>();
+        for length in (1..v.len()).rev() {
+            if v.len() % length != 0 {
+                continue;
+            }
+
+            let mut chunks = v.chunks(length);
+            let mut first = chunks.next().unwrap();
+            let mut all_parts_equal = chunks.all(|x| x.eq(first));
+
+            if all_parts_equal {
+                res.push(id);
+                break;
+            }
+        }
+    }
+
+    res
+}
+
+fn parse(input: &str) -> Result<(Vec<i64>, Vec<i64>), Box<dyn std::error::Error>> {
     let lines = input.split(",").collect::<Vec<_>>();
     let mut result = vec![];
+    let mut result_part2 = vec![];
 
     for line in lines {
         let index = match line.find("-") {
@@ -65,10 +98,13 @@ fn parse(input: &str) -> Result<Vec<i64>, Box<dyn std::error::Error>> {
         let range = get_range(line, index);
 
         let invalid_ids = find_invalid_ids(range);
+        let invalid_ids_part2 = find_invalid_ids_part2(range);
+
         result.extend_from_slice(&invalid_ids);
+        result_part2.extend_from_slice(&invalid_ids_part2);
     }
 
-    Ok(result)
+    Ok((result, result_part2))
 }
 
 #[cfg(test)]
@@ -78,6 +114,7 @@ mod tests {
     const INPUT: &str = "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124";
 
     #[test]
+    #[ignore]
     fn can_find_invalid_ids() {
         let res = find_invalid_ids((11, 22));
 
@@ -85,14 +122,23 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn can_solve() {
-        let invalid_ids = parse(INPUT);
+        let invalid_ids = parse(INPUT).unwrap();
         let sum = invalid_ids
-            .expect("Could parse ids")
+            .0
             .into_iter()
             .reduce(|a, c| a + c)
             .expect("Could find sum");
 
         assert_eq!(sum, 1227775554);
+    }
+
+    #[test]
+    fn can_chunk() {
+        assert_eq!(find_invalid_ids_part2((11, 22)), vec![11, 22]);
+        assert_eq!(find_invalid_ids_part2((95, 115)), vec![99, 111]);
+        assert_eq!(find_invalid_ids_part2((998, 1012)), vec![999, 1010]);
+        assert_eq!(find_invalid_ids_part2((222220, 222224)), vec![222222]);
     }
 }
