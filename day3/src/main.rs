@@ -36,21 +36,7 @@ impl Bank {
         let (index, value) = vec
             .iter()
             .enumerate()
-            .max_by(
-                |(index_a, value_a), (index_b, value_b)| match value_a.cmp(value_b) {
-                    // We must keep the FIRST max index as the candidate - max_by always returns
-                    // the LAST instance of the maximum value
-                    std::cmp::Ordering::Less => std::cmp::Ordering::Less, //(index_b, value_b),
-                    std::cmp::Ordering::Equal => match index_a.cmp(index_b) {
-                        // If the values are equal reverse ordering -> we always want the FIRST
-                        // index of the maximum value
-                        std::cmp::Ordering::Less => std::cmp::Ordering::Greater,
-                        std::cmp::Ordering::Equal => std::cmp::Ordering::Equal,
-                        std::cmp::Ordering::Greater => std::cmp::Ordering::Less,
-                    },
-                    std::cmp::Ordering::Greater => std::cmp::Ordering::Greater, //(index_a, value_a),
-                },
-            )
+            .reduce(|acc, curr| if acc.1 > curr.1 { acc } else { curr })
             .unwrap();
 
         (index, value)
@@ -59,24 +45,12 @@ impl Bank {
     fn process(&self) -> u32 {
         let mut vec = self.batteries.clone();
 
-        let (index1, value1) = Bank::find_highest_joltage(&vec);
+        // Only have to look up the second to last index thus making sure
+        // the 2 digits are in the correct order (e.g. 81119 - only search 8111 and then 1119)
+        let (index1, value1) = Bank::find_highest_joltage(&vec[..vec.len() - 1]);
+        let (index2, value2) = Bank::find_highest_joltage(&vec[index1 + 1..]);
 
-        let string = if index1 == 0 {
-            // normal case -> highest int was at the beginning
-            let (index2, value2) = Bank::find_highest_joltage(&vec[index1 + 1..]);
-
-            format!("{}{}", value1, value2)
-        } else if index1 == vec.len() - 1 {
-            // special case -> highest int was at the end -> we need to switch 2nd int to the first position
-            let (index2, value2) = Bank::find_highest_joltage(&vec[..index1]);
-
-            format!("{}{}", value2, value1)
-        } else {
-            // normal case -> need to only search right from first index
-            let (index2, value2) = Bank::find_highest_joltage(&vec[index1 + 1..]);
-
-            format!("{}{}", value1, value2)
-        };
+        let string = format!("{}{}", value1, value2);
 
         let res = string.parse::<u32>().unwrap();
 
