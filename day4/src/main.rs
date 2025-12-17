@@ -38,25 +38,44 @@ impl Wall {
 
     fn process(&mut self) -> isize {
         let mut counter = 0;
-        for i in 0..self.lines.len() {
-            if self.lines[i] == '.' {
-                continue;
-            }
+        let mut removed = 0;
 
-            let mut res = 0;
-            let adjacent = get_adjacent(i, self.width);
+        loop {
+            removed = 0;
+            for i in 0..self.lines.len() {
+                if self.lines[i] == '.' {
+                    continue;
+                }
 
-            for index in adjacent {
-                if let Some(x) = self.lines.get(index)
-                    && (*x == '@' || *x == 'x')
-                {
-                    res += 1;
+                let mut res = 0;
+                let adjacent = get_adjacent(i, self.width);
+
+                for index in adjacent {
+                    if let Some(x) = self.lines.get(index)
+                        && (*x == '@' || *x == 'x')
+                    {
+                        res += 1;
+                    }
+                }
+
+                if (res < 4) {
+                    removed += 1;
+                    self.lines[i] = 'x';
                 }
             }
 
-            if (res < 4) {
-                counter += 1;
-                self.lines[i] = 'x';
+            counter += removed;
+
+            if removed == 0 {
+                break;
+            } else {
+                for c in self.lines.iter_mut() {
+                    if *c == 'x' {
+                        *c = '.';
+                    }
+                }
+
+                removed = 0;
             }
         }
 
