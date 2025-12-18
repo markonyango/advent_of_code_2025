@@ -9,3 +9,4 @@ members = ["day1", "day2", "day3", "day4", "day5"]
 [workspace.dependencies]
 tracing = "0.1.43"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+test-log = "0.2.19"
